@@ -1,10 +1,11 @@
 package com.growth.member.service;
 
+import com.growth.global.exception.BadRequestException;
+import com.growth.member.repository.MemberRepository;
 import com.growth.support.IntegrationTestBase;
 import com.growth.member.domain.Member;
 import com.growth.member.dto.request.SignUpMemberRequestDto;
 import com.growth.member.dto.response.SignUpMemberResponseDto;
-import com.growth.member.repository.MemberJpaRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ class SignUpMemberServiceIntegrationTest extends IntegrationTestBase {
     private SignUpMemberService signUpMemberService;
 
     @Autowired
-    private MemberJpaRepository memberRepository;
+    private MemberRepository memberRepository;
 
     @Test
     @DisplayName("회원가입 기능을 통해 회원을 생성할 수 있다")
@@ -69,7 +70,7 @@ class SignUpMemberServiceIntegrationTest extends IntegrationTestBase {
 
         // when & then
         assertThatThrownBy(() -> signUpMemberService.signUp(requestDto))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BadRequestException.class)
                 .hasMessage("이미 존재하는 이메일입니다");
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -20,6 +21,7 @@ public class MemberCommandController {
     private final SignUpMemberUseCase signUpMemberUseCase;
 
     @PostMapping("/api/members/signup")
+    @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<SignUpMemberResponseDto> signUp(
             @Valid @RequestBody SignUpMemberRequestDto requestDto) {
 

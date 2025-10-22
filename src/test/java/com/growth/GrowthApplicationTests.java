@@ -1,15 +1,20 @@
 package com.growth;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.boot.SpringApplication;
 
-@EnableJpaAuditing
-@SpringBootTest
 class GrowthApplicationTests {
 
     @Test
-    void contextLoads() {
-    }
+    void run() {
+        try (MockedStatic<SpringApplication> mocked = Mockito.mockStatic(SpringApplication.class)) {
+            GrowthApplication.main(new String[0]);
 
+            mocked.verify(() -> {
+                SpringApplication.run(GrowthApplication.class, new String[0]);
+            });
+        }
+    }
 }

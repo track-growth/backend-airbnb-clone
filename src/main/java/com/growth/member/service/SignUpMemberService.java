@@ -4,7 +4,7 @@ import com.growth.global.exception.BadRequestException;
 import com.growth.member.domain.Member;
 import com.growth.member.dto.request.SignUpMemberRequestDto;
 import com.growth.member.dto.response.SignUpMemberResponseDto;
-import com.growth.member.repository.MemberJpaRepository;
+import com.growth.member.repository.MemberRepository;
 import com.growth.member.usecase.SignUpMemberUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class SignUpMemberService implements SignUpMemberUseCase {
 
-    private final MemberJpaRepository memberRepository;
+    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
