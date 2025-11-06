@@ -1,4 +1,4 @@
-package com.growth.member.dto.response;
+package com.growth.auth.dto.response;
 
 import com.growth.member.domain.Member;
 import lombok.Builder;
@@ -6,16 +6,19 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Builder
-public record LoginMemberResponseDto(
+public record LoginResponseDto(
+        String accessToken,
         String email,
         String nickname,
         LocalDateTime lastLoginAt
 ) {
-    public static LoginMemberResponseDto from(Member member) {
-        return LoginMemberResponseDto.builder()
+    public static LoginResponseDto from(Member member, String accessToken) {
+        return LoginResponseDto.builder()
+                .accessToken(accessToken)
                 .email(member.getEmail())
                 .nickname(member.getNickname())
-                .lastLoginAt(member.getUpdatedAt()) // NOTE: 마지막 업데이트 시간을 로그인 시간으로 사용
+                .lastLoginAt(member.getLastLoginAt())
                 .build();
     }
 }
+

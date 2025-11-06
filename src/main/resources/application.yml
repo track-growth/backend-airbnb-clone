@@ -10,9 +10,9 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL:jdbc:mysql://localhost:3307/airbnb?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
-    username: ${DB_USERNAME:user}
-    password: ${DB_PASSWORD:1234}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/airbnb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Mysql1234}
     hikari:
       maximum-pool-size: 10
       connection-timeout: 30000
@@ -33,3 +33,8 @@ spring:
         generate_statistics: false
     show-sql: true
     open-in-view: false
+
+# TODO: 시크릿 키 env 설정
+jwt:
+  secret: ${JWT_SECRET:PHNHLG1nm+wTX2Ktwi/0OsFwiBKS6vIek+uOtnAe1/k=}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:86400000} # 24시간 (밀리초)

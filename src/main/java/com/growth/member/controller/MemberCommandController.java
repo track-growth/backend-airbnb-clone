@@ -1,16 +1,12 @@
 package com.growth.member.controller;
 
 import com.growth.global.common.response.ApiResponse;
-import com.growth.member.dto.request.LoginMemberRequestDto;
 import com.growth.member.dto.request.SignUpMemberRequestDto;
-import com.growth.member.dto.response.LoginMemberResponseDto;
 import com.growth.member.dto.response.SignUpMemberResponseDto;
-import com.growth.member.usecase.LoginMemberUseCase;
 import com.growth.member.usecase.SignUpMemberUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -21,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MemberCommandController {
   private final SignUpMemberUseCase signUpMemberUseCase;
-  private final LoginMemberUseCase loginMemberUseCase;
 
   @PostMapping("/api/members/signup")
   @ResponseStatus(HttpStatus.CREATED)
@@ -30,13 +25,5 @@ public class MemberCommandController {
   ) {
     SignUpMemberResponseDto response = signUpMemberUseCase.signUp(requestDto);
     return ApiResponse.created(response, "회원가입이 완료되었습니다");
-  }
-
-  @PostMapping("/api/members/login")
-  public ApiResponse<LoginMemberResponseDto> login(
-    @Valid @RequestBody LoginMemberRequestDto requestDto
-  ) {
-    LoginMemberResponseDto response = loginMemberUseCase.login(requestDto);
-    return ApiResponse.success(response);
   }
 }
