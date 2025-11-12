@@ -1,3 +1,7 @@
+/** 
+ * @description JWT 토큰을 저장하는 class
+ */
+
 package com.growth.auth.jwt.domain;
 
 import lombok.Value;

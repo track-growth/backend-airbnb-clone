@@ -32,10 +32,9 @@ public class SecurityConfig {
       .authorizeHttpRequests(
         auth ->
           auth
-            // 회원가입, 로그인은 인증 없이 접근 가능
+            // NOTE: 회원가입, 로그인은 인증 없이 접근 가능
             .requestMatchers(
               "/api/members/signup",
-              "/api/members/login",
               "/api/auth/login"
             )
             .permitAll()
@@ -54,9 +53,10 @@ public class SecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    // Origin 설정
-    configuration.setAllowedOrigins(
-      Arrays.asList("http://localhost:3000", "http://localhost:3001")
+    // NOTE: Origin 설정 (allowCredentials(true)와 함께 사용하려면 setAllowedOriginPatterns 사용)
+    // NOTE: setAllowedOrigins와 setAllowCredentials(true)를 함께 사용하면 오류 발생 가능하여 setAllowedOriginPatterns 사용
+    configuration.setAllowedOriginPatterns(
+      Arrays.asList("http://localhost:3000")
     );
 
     // HTTP Method 설정

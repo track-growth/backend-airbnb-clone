@@ -14,50 +14,85 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@DisplayName("LoginService 통합 테스트")
-class LoginServiceIntegrationTest extends IntegrationTestBase {
+// 📌 Question: AuthService인데 Login 관련 테스트만 설정해도 되는건지..?
+// 📌 Question: 회원가입의 경우는 controller/MemberCommandControllerTest.java 에서 테스트 가능한데, 로그인의 경우는 추가적으로 테스트 코드를 작성해야 하는건지..?
+@DisplayName("AuthService 통합 테스트")
+class AuthServiceIntegrationTest extends IntegrationTestBase {
+  // NOTE: @Autowired: Spring Framework에서 의존성 주입을 자동으로 처리하는 어노테이션
+  // - 직접 만드는 방식보다 테스트 코드 작성이 편리함 + 객체 간 결합도 낮아짐 + 테스트용 DB 사용
   @Autowired
-  private LoginService loginService;
+  // NOTE: 로그인/인증 로직을 처리하는 서비스를 주입받음
+  // 테스트에서 authService.login() 호출하여 로그인 기능을 테스트 가능
+  private AuthService authService;
 
   @Autowired
+  // NOTE: 회원 정보를 저장/조회하는 리포지토리를 주입받음
+  // memberRepository.save(member)로 테스트 데이터 저장 가능
   private MemberRepository memberRepository;
 
   @Autowired
+  // NOTE: 비밀번호 암호화를 처리하는 PasswordEncoder를 주입받음 (spring security 제공 framework)
+  // 테스트에서 passwordEncoder.encode(password)로 비밀번호 암호화 테스트 가능
   private PasswordEncoder passwordEncoder;
+
 
   @Test
   @DisplayName("올바른 이메일과 비밀번호로 로그인할 수 있다")
   void login_Success() {
+    // 1. Member 엔티티 생성
+    // 2. memberRepository.save(member)로 테스트용 DB에 회원 데이터(member 엔티티) 저장
+    // 3. LoginRequestDto 생성
+    // 4. authService.login() 호출하여 로그인 기능 테스트 (로그인 성공 시 응답 DTO 반환)
+    // 5. assertThat()로 응답 DTO 검증
+
     // given
     String email = "test@example.com";
     String password = "password123";
+    // NOTE: passwordEncoder로 비밀번호 암호화
     String encodedPassword = passwordEncoder.encode(password);
 
-    // 회원 생성 및 저장
+    // NOTE: 테스트용 회원 생성 및 저장
     Member member = Member
       .builder()
       .email(email)
       .password(encodedPassword)
       .nickname("testuser")
       .build();
+    // NOTE: 테스트용 DB에 회원 데이터 저장
     memberRepository.save(member);
 
+    // NOTE: 로그인 요청 DTO 생성
     LoginRequestDto requestDto = new LoginRequestDto(email, password);
 
+    // NOTE: 로그인 기능 테스트
     // when
-    LoginResponseDto response = loginService.login(requestDto);
+    LoginResponseDto response = authService.login(requestDto);
 
     // then
+    // NOTE: assertThat(): assertj 라이브러리의 메서드로 객체의 값을 검증하는 메서드
+    // - 응답 DTO가 null이 아닌지 검증
     assertThat(response).isNotNull();
+    // - 응답 DTO의 email이 올바른지 검증
     assertThat(response.email()).isEqualTo(email);
+    // - 응답 DTO의 nickname이 올바른지 검증
     assertThat(response.nickname()).isEqualTo("testuser");
+    // NOTE: 토큰은 응답 body에 포함되지 않고 쿠키로만 전달됨
+    // - 응답 DTO의 accessToken은 더 이상 포함되지 않음
+    // - 응답 DTO의 refreshToken은 더 이상 포함되지 않음
+    // NOTE: 로그인 성공 시 마지막 로그인 시간 검증
+    // 단위 테스트에서는 updatedAt이 null일 수 있음 (실제 저장되지 않기 때문)
     assertThat(response.lastLoginAt()).isNotNull();
+    // NOTE: 로그인 성공 시 마지막 로그인 시간이 현재 시간 이전 또는 같은지 검증
     assertThat(response.lastLoginAt()).isBeforeOrEqualTo(LocalDateTime.now());
   }
 
   @Test
   @DisplayName("존재하지 않는 이메일로 로그인 시 예외가 발생한다")
   void login_NotExistentEmail_ThrowsException() {
+    // 1. LoginRequestDto 생성
+    // 2. authService.login() 호출하여 로그인 기능 테스트 (존재하지 않는 이메일로 로그인 시 예외 발생)
+    // 3. assertThatThrownBy()로 예외 검증
+
     // given
     String email = "testNotExist@example.com";
     String password = "test123";
@@ -65,14 +100,23 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
     LoginRequestDto requestDto = new LoginRequestDto(email, password);
 
     // when & then
-    assertThatThrownBy(() -> loginService.login(requestDto))
+    // NOTE: assertThatThrownBy(): assertj 라이브러리의 메서드로 예외를 검증하는 메서드
+    assertThatThrownBy(() -> authService.login(requestDto))
+     // NOTE: isInstanceOf(): 예외 타입을 검증하는 메서드
       .isInstanceOf(BadRequestException.class)
+      // NOTE: hasMessage(): 예외 메시지를 검증하는 메서드
       .hasMessage("회원 정보가 없습니다.");
   }
 
   @Test
   @DisplayName("잘못된 비밀번호로 로그인 시 예외가 발생한다")
   void login_WrongPassword_ThrowsException() {
+    // 1. Member 엔티티 생성
+    // 2. memberRepository.save(member)로 테스트용 DB에 회원 데이터(member 엔티티) 저장
+    // 3. LoginRequestDto 생성
+    // 4. authService.login() 호출하여 로그인 기능 테스트 (잘못된 비밀번호로 로그인 시 예외 발생)
+    // 5. assertThatThrownBy()로 예외 검증
+
     // given
     String email = "test@example.com";
     String correctPassword = "123";
@@ -91,7 +135,7 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
     LoginRequestDto requestDto = new LoginRequestDto(email, wrongPassword);
 
     // when & then
-    assertThatThrownBy(() -> loginService.login(requestDto))
+    assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("비밀번호가 일치하지 않습니다.");
   }
@@ -99,6 +143,12 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("여러 회원이 있을 때 특정 회원으로 로그인할 수 있다")
   void login_WithMultipleMembers_Success() {
+    // 1. 여러 회원 엔티티 생성
+    // 2. memberRepository.save(member)로 테스트용 DB에 여러 회원 데이터(member 엔티티) 저장
+    // 3. LoginRequestDto 생성
+    // 4. authService.login() 호출하여 로그인 기능 테스트 (여러 회원 중 특정 회원으로 로그인 시 응답 DTO 반환)
+    // 5. assertThat()로 응답 DTO 검증
+
     // given - 여러 회원 생성
     String email1 = "user1@example.com";
     String email2 = "user2@example.com";
@@ -125,7 +175,7 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
     // when - 첫 번째 회원으로 로그인
     LoginRequestDto requestDto = new LoginRequestDto(email1, password1);
 
-    LoginResponseDto response = loginService.login(requestDto);
+    LoginResponseDto response = authService.login(requestDto);
 
     // then
     assertThat(response).isNotNull();
@@ -136,6 +186,12 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("대소문자가 다른 이메일로 로그인 시 예외가 발생한다")
   void login_CaseSensitiveEmail_ThrowsException() {
+    // 1. 회원 엔티티 생성
+    // 2. memberRepository.save(member)로 테스트용 DB에 회원 데이터(member 엔티티) 저장
+    // 3. LoginRequestDto 생성
+    // 4. authService.login() 호출하여 로그인 기능 테스트 (대소문자가 다른 이메일로 로그인 시 예외 발생)
+    // 5. assertThatThrownBy()로 예외 검증
+
     // given
     String email = "test@example.com";
     String differentCaseEmail = "TEST@EXAMPLE.COM";
@@ -157,7 +213,7 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
     );
 
     // when & then
-    assertThatThrownBy(() -> loginService.login(requestDto))
+    assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("회원 정보가 없습니다.");
   }
@@ -165,6 +221,12 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("공백이 포함된 이메일로 로그인 시 예외가 발생한다")
   void login_EmailWithWhitespace_ThrowsException() {
+    // 1. 회원 엔티티 생성
+    // 2. memberRepository.save(member)로 테스트용 DB에 회원 데이터(member 엔티티) 저장
+    // 3. LoginRequestDto 생성
+    // 4. authService.login() 호출하여 로그인 기능 테스트 (공백이 포함된 이메일로 로그인 시 예외 발생)
+    // 5. assertThatThrownBy()로 예외 검증
+
     // given
     String email = "test@example.com";
     String emailWithWhitespace = " test@example.com ";
@@ -186,7 +248,7 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
     );
 
     // when & then
-    assertThatThrownBy(() -> loginService.login(requestDto))
+    assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("회원 정보가 없습니다.");
   }
@@ -194,6 +256,12 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("공백이 포함된 비밀번호로 로그인 시 예외가 발생한다")
   void login_PasswordWithWhitespace_ThrowsException() {
+    // 1. 회원 엔티티 생성
+    // 2. memberRepository.save(member)로 테스트용 DB에 회원 데이터(member 엔티티) 저장
+    // 3. LoginRequestDto 생성
+    // 4. authService.login() 호출하여 로그인 기능 테스트 (공백이 포함된 비밀번호로 로그인 시 예외 발생)
+    // 5. assertThatThrownBy()로 예외 검증
+
     // given
     String email = "test@example.com";
     String password = "password123";
@@ -215,7 +283,7 @@ class LoginServiceIntegrationTest extends IntegrationTestBase {
     );
 
     // when & then
-    assertThatThrownBy(() -> loginService.login(requestDto))
+    assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("비밀번호가 일치하지 않습니다.");
   }
