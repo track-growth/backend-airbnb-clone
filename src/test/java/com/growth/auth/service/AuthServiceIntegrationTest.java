@@ -4,19 +4,25 @@ import static org.assertj.core.api.Assertions.*;
 
 import com.growth.auth.dto.request.LoginRequestDto;
 import com.growth.auth.dto.response.LoginResponseDto;
+import com.growth.auth.dto.response.LoginResultDto;
 import com.growth.global.exception.BadRequestException;
 import com.growth.member.domain.Member;
 import com.growth.member.repository.MemberRepository;
 import com.growth.support.IntegrationTestBase;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.time.Clock;
 
-// 📌 Question: AuthService인데 Login 관련 테스트만 설정해도 되는건지..?
-// 📌 Question: 회원가입의 경우는 controller/MemberCommandControllerTest.java 에서 테스트 가능한데, 로그인의 경우는 추가적으로 테스트 코드를 작성해야 하는건지..?
 @DisplayName("AuthService 통합 테스트")
+@Import(AuthServiceIntegrationTest.TestClockConfig.class)
 class AuthServiceIntegrationTest extends IntegrationTestBase {
   // NOTE: @Autowired: Spring Framework에서 의존성 주입을 자동으로 처리하는 어노테이션
   // - 직접 만드는 방식보다 테스트 코드 작성이 편리함 + 객체 간 결합도 낮아짐 + 테스트용 DB 사용
@@ -35,6 +41,26 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
   // 테스트에서 passwordEncoder.encode(password)로 비밀번호 암호화 테스트 가능
   private PasswordEncoder passwordEncoder;
 
+  @Autowired
+  // NOTE: 테스트 시 고정 시각 사용
+  private Clock clock;
+
+  /**
+   * 테스트용 Clock 설정
+   * - 테스트 시 고정 시각을 사용하여 시간 관련 테스트를 안정적으로 수행
+   * - 운영 환경에서는 TimeConfig의 Clock.systemDefaultZone()이 사용됨
+   * - @Profile("!test")로 인해 TimeConfig의 Clock은 테스트 환경에서 등록되지 않음
+   */
+  @TestConfiguration
+  static class TestClockConfig {
+    @Bean
+    public Clock clock() {
+      // NOTE: 테스트용 고정 시각 설정 (2025-11-26 12:00:00 UTC)
+      Instant fixedInstant = Instant.parse("2025-11-26T12:00:00Z");
+      ZoneId zoneId = ZoneId.of("UTC");
+      return Clock.fixed(fixedInstant, zoneId);
+    }
+  }
 
   @Test
   @DisplayName("올바른 이메일과 비밀번호로 로그인할 수 있다")
@@ -66,7 +92,8 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
 
     // NOTE: 로그인 기능 테스트
     // when
-    LoginResponseDto response = authService.login(requestDto);
+    LoginResultDto loginResult = authService.login(requestDto);
+    LoginResponseDto response = loginResult.loginResponseDto();
 
     // then
     // NOTE: assertThat(): assertj 라이브러리의 메서드로 객체의 값을 검증하는 메서드
@@ -82,8 +109,10 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     // NOTE: 로그인 성공 시 마지막 로그인 시간 검증
     // 단위 테스트에서는 updatedAt이 null일 수 있음 (실제 저장되지 않기 때문)
     assertThat(response.lastLoginAt()).isNotNull();
-    // NOTE: 로그인 성공 시 마지막 로그인 시간이 현재 시간 이전 또는 같은지 검증
-    assertThat(response.lastLoginAt()).isBeforeOrEqualTo(LocalDateTime.now());
+    // NOTE: 로그인 성공 시 마지막 로그인 시간이 고정 시각과 정확히 일치하는지 검증
+    // NOTE: Clock.fixed()를 사용하여 테스트 시 고정 시각을 사용하므로, 정확한 시간 비교가 가능함
+    LocalDateTime expectedTime = LocalDateTime.ofInstant(clock.instant(), clock.getZone());
+    assertThat(response.lastLoginAt()).isEqualTo(expectedTime);
   }
 
   @Test
@@ -175,7 +204,8 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     // when - 첫 번째 회원으로 로그인
     LoginRequestDto requestDto = new LoginRequestDto(email1, password1);
 
-    LoginResponseDto response = authService.login(requestDto);
+    LoginResultDto loginResult = authService.login(requestDto);
+    LoginResponseDto response = loginResult.loginResponseDto();
 
     // then
     assertThat(response).isNotNull();

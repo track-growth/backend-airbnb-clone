@@ -15,7 +15,7 @@ public class UserIdentity {
   String email;
 
   // NOTE: from() 메서드: UserIdentity 객체 생성
-  public static UserIdentity from(UUID memberId, String email) {
+  public static UserIdentity of(UUID memberId, String email) {
     // NOTE: builder() 메서드: UserIdentity 객체 생성
     return UserIdentity.builder()
       // - memberId 값 설정

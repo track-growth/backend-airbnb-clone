@@ -40,6 +40,17 @@ public class CookieUtil {
   }
 
   /**
+   * Access Token과 Refresh Token을 쿠키에 설정
+   * @param response HTTP 응답
+   * @param accessToken Access Token
+   * @param refreshToken Refresh Token
+   */
+  public void setTokenCookies(HttpServletResponse response, String accessToken, String refreshToken) {
+    setAccessTokenCookie(response, accessToken);
+    setRefreshTokenCookie(response, refreshToken);
+  }
+
+  /**
    * Access Token 쿠키 삭제
    */
   public void deleteAccessTokenCookie(HttpServletResponse response) {

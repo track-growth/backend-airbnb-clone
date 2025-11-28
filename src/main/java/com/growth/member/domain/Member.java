@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.time.Clock;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -57,7 +58,8 @@ public class Member extends BaseEntity {
     this.lastLoginAt = lastLoginAt;
   }
 
-  public void updateLastLoginAt() {
-    this.lastLoginAt = LocalDateTime.now();
+  public void updateLastLoginAt(Clock clock) {
+    // NOTE: clock을 사용하여 마지막 로그인 시간 업데이트
+    this.lastLoginAt = LocalDateTime.now(clock);
   }
 }

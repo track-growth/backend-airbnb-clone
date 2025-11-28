@@ -1,11 +1,14 @@
 package com.growth.auth.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 import com.growth.auth.dto.request.LoginRequestDto;
 import com.growth.auth.dto.response.LoginResponseDto;
+import com.growth.auth.dto.response.LoginResultDto;
 import com.growth.auth.jwt.domain.EncodedToken;
 import com.growth.auth.jwt.domain.TokenType;
 import com.growth.auth.jwt.domain.UserIdentity;
@@ -14,6 +17,9 @@ import com.growth.global.exception.BadRequestException;
 import com.growth.member.domain.Member;
 import com.growth.member.repository.MemberRepository;
 import com.growth.support.UnitTestBase;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,6 +50,9 @@ class AuthServiceTest extends UnitTestBase {
   // 테스트에서 jwtService.generateToken() 호출하여 JWT Token 생성 테스트 가능
   @Mock
   private JwtService jwtService;
+
+  @Mock
+  private Clock clock;
 
   // NOTE: Mock 객체 주입을 위한 InjectMocks 어노테이션
   // - 모든 Mock 객체(memberRepository, passwordEncoder, jwtService)를 주입받아 AuthService 객체 생성
@@ -77,38 +86,42 @@ class AuthServiceTest extends UnitTestBase {
       .nickname("testuser")
       .build();
 
-    // String accessToken = "accessToken";
-    // String refreshToken = "refreshToken";
+    String accessToken = "accessToken";
+    String refreshToken = "refreshToken";
+    EncodedToken encodedAccessToken = EncodedToken.from(accessToken);
+    EncodedToken encodedRefreshToken = EncodedToken.from(refreshToken);
+    Instant fixedInstant = Instant.parse("2025-11-26T12:00:00Z");
+    ZoneId zoneId = ZoneId.of("UTC");
 
     // NOTE: given(): Mock 객체의 동작을 정의하는 메서드
     // - Member 엔티티 조회
     given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
     // - 비밀번호 검증
     given(passwordEncoder.matches(password, encodedPassword)).willReturn(true);
-    // NOTE: login 메서드에서는 토큰을 생성하지 않음 (토큰은 Controller에서 생성)
-    // - jwtService.generateToken은 login 메서드에서 호출되지 않음
+    given(clock.instant()).willReturn(fixedInstant);
+    given(clock.getZone()).willReturn(zoneId);
+    given(jwtService.generateToken(any(UserIdentity.class), eq(TokenType.ACCESS))).willReturn(encodedAccessToken);
+    given(jwtService.generateToken(any(UserIdentity.class), eq(TokenType.REFRESH))).willReturn(encodedRefreshToken);
 
     // when
-    LoginResponseDto response = authService.login(requestDto);
+    LoginResultDto loginResult = authService.login(requestDto);
+    LoginResponseDto response = loginResult.loginResponseDto();
 
     // then
     // NOTE: assertThat(): assertj 라이브러리의 메서드 -> 객체의 값을 검증하는 메서드
     assertThat(response).isNotNull();
     assertThat(response.email()).isEqualTo(email);
     assertThat(response.nickname()).isEqualTo("testuser");
-    // NOTE: 토큰은 응답 body에 포함되지 않고 쿠키로만 전달됨
-    // assertThat(response.accessToken()).isEqualTo(accessToken);
-    // assertThat(response.refreshToken()).isEqualTo(refreshToken);
-    // NOTE: 단위 테스트에서는 updatedAt이 null일 수 있음 (실제 저장되지 않기 때문)
-    // assertThat(response.lastLoginAt()).isNotNull();
+    assertThat(loginResult.accessToken()).isEqualTo(accessToken);
+    assertThat(loginResult.refreshToken()).isEqualTo(refreshToken);
 
     // NOTE: then(): Mock 객체의 동작을 검증하는 메서드
     // - memberRepository.findByEmail(email) 호출하여 Member 엔티티 조회
     then(memberRepository).should().findByEmail(email);
     // - passwordEncoder.matches(password, encodedPassword) 호출하여 비밀번호 검증
     then(passwordEncoder).should().matches(password, encodedPassword);
-    // NOTE: login 메서드에서는 토큰을 생성하지 않음 (토큰은 Controller에서 생성)
-    // - jwtService.generateToken은 login 메서드에서 호출되지 않음
+    then(jwtService).should().generateToken(any(UserIdentity.class), eq(TokenType.ACCESS));
+    then(jwtService).should().generateToken(any(UserIdentity.class), eq(TokenType.REFRESH));
   }
 
   @Test

@@ -11,7 +11,7 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${DB_URL:jdbc:mysql://localhost:3306/airbnb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true}
-    username: ${DB_USERNAME:}
+    username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:Mysql1234}
     hikari:
       maximum-pool-size: 10
