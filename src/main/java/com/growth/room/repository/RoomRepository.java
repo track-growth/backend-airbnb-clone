@@ -29,7 +29,7 @@ public interface RoomRepository extends JpaRepository<Room, UUID> {
    * @param hostId 호스트 ID
    * @return 해당 호스트 ID에 해당하는 방 목록
    */
-  @Query("SELECT r FROM Room r WHERE r.host.memberId = :hostId")
+  @Query("SELECT r FROM Room r WHERE r.hostId = :hostId")
   List<Room> findByHostId(@Param("hostId") UUID hostId);
 
   /**

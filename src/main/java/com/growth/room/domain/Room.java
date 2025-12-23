@@ -1,7 +1,6 @@
 package com.growth.room.domain;
 
 import com.growth.global.common.entity.BaseEntity;
-import com.growth.member.domain.Member;
 import com.growth.room.dto.request.CreateRoomRequestDto;
 import jakarta.persistence.*;
 import java.util.UUID;
@@ -35,11 +34,13 @@ public class Room extends BaseEntity {
   @Column(name = "max_guest", nullable = false)
   private Integer maxGuest;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "host_id", nullable = false)
-  private Member host;
+  // NOTE: MSA 구조에서 member service와 room service가 분리될 경우를 대비
+  // Member 엔티티를 직접 참조하지 않고 hostId만 저장
+  // 회원 정보가 필요한 경우 member service API를 호출하여 조회 가능
+  @Column(name = "host_id", nullable = false)
+  private UUID hostId;
 
-  public static Room from(CreateRoomRequestDto requestDto, Member host) {
+  public static Room from(CreateRoomRequestDto requestDto, UUID hostId) {
     return Room
       .builder()
       .title(requestDto.title())
@@ -47,7 +48,7 @@ public class Room extends BaseEntity {
       .address(requestDto.address())
       .price(requestDto.price())
       .maxGuest(requestDto.maxGuest())
-      .host(host)
+      .hostId(hostId)
       .build();
   }
 
@@ -58,14 +59,14 @@ public class Room extends BaseEntity {
     String address,
     Integer price,
     Integer maxGuest,
-    Member host
+    UUID hostId
   ) {
     this.title = title;
     this.description = description;
     this.address = address;
     this.price = price;
     this.maxGuest = maxGuest;
-    this.host = host;
+    this.hostId = hostId;
   }
 }
 
