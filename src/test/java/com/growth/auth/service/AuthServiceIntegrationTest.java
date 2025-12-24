@@ -9,20 +9,14 @@ import com.growth.global.exception.BadRequestException;
 import com.growth.member.domain.Member;
 import com.growth.member.repository.MemberRepository;
 import com.growth.support.IntegrationTestBase;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Clock;
 
 @DisplayName("AuthService 통합 테스트")
-@Import(AuthServiceIntegrationTest.TestClockConfig.class)
 class AuthServiceIntegrationTest extends IntegrationTestBase {
   // NOTE: @Autowired: Spring Framework에서 의존성 주입을 자동으로 처리하는 어노테이션
   // - 직접 만드는 방식보다 테스트 코드 작성이 편리함 + 객체 간 결합도 낮아짐 + 테스트용 DB 사용
@@ -42,25 +36,8 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
   private PasswordEncoder passwordEncoder;
 
   @Autowired
-  // NOTE: 테스트 시 고정 시각 사용
+  // NOTE: 테스트 시 고정 시각 사용 
   private Clock clock;
-
-  /**
-   * 테스트용 Clock 설정
-   * - 테스트 시 고정 시각을 사용하여 시간 관련 테스트를 안정적으로 수행
-   * - 운영 환경에서는 TimeConfig의 Clock.systemDefaultZone()이 사용됨
-   * - @Profile("!test")로 인해 TimeConfig의 Clock은 테스트 환경에서 등록되지 않음
-   */
-  @TestConfiguration
-  static class TestClockConfig {
-    @Bean
-    public Clock clock() {
-      // NOTE: 테스트용 고정 시각 설정 (2025-11-26 12:00:00 UTC)
-      Instant fixedInstant = Instant.parse("2025-11-26T12:00:00Z");
-      ZoneId zoneId = ZoneId.of("UTC");
-      return Clock.fixed(fixedInstant, zoneId);
-    }
-  }
 
   @Test
   @DisplayName("올바른 이메일과 비밀번호로 로그인할 수 있다")
