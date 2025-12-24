@@ -84,7 +84,7 @@ public class MemberAuthService {
    */
   public void validateMemberExists(java.util.UUID memberId) {
     if (!memberRepository.existsById(memberId)) {
-      throw new BadRequestException("존재하지 않는 회원입니다.");
+      throw new BadRequestException("존재하지 않는 회원입니다. 회원id: " + memberId);
     }
   }
 }
