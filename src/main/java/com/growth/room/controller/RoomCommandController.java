@@ -1,5 +1,6 @@
 package com.growth.room.controller;
 
+import com.growth.auth.annotation.CurrentMemberId;
 import com.growth.global.common.response.ApiResponse;
 import com.growth.room.dto.request.CreateRoomRequestDto;
 import com.growth.room.dto.response.CreateRoomResponseDto;
@@ -8,7 +9,6 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -23,11 +23,8 @@ public class RoomCommandController {
   @ResponseStatus(HttpStatus.CREATED)
   public ApiResponse<CreateRoomResponseDto> createRoom(
     @Valid @RequestBody CreateRoomRequestDto requestDto,
-    Authentication authentication
+    @CurrentMemberId UUID hostId
   ) {
-    // NOTE: SecurityContext에서 현재 인증된 사용자의 memberId 추출
-    UUID hostId = (UUID) authentication.getPrincipal();
-    
     CreateRoomResponseDto response = createRoomUseCase.createRoom(requestDto, hostId);
     return ApiResponse.created(response, "숙소가 생성되었습니다");
   }
