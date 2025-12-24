@@ -1,8 +1,8 @@
 package com.growth.auth.jwt.filter;
 
 import com.growth.auth.jwt.domain.EncodedToken;
+import com.growth.auth.jwt.extractor.JwtTokenExtractor;
 import com.growth.auth.jwt.service.JwtService;
-import com.growth.auth.util.CookieUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,9 +27,7 @@ import org.springframework.lang.NonNull;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
-  private final CookieUtil cookieUtil;
-  private static final String AUTHORIZATION_HEADER = "Authorization";
-  private static final String BEARER_PREFIX = "Bearer ";
+  private final JwtTokenExtractor jwtTokenExtractor;
 
   @Override
   protected void doFilterInternal(
@@ -37,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @NonNull HttpServletResponse response,
     @NonNull FilterChain filterChain
   ) throws ServletException, IOException {
-    String token = extractToken(request);
+    String token = jwtTokenExtractor.extractToken(request);
 
     if (StringUtils.hasText(token)) {
       try {
@@ -65,17 +63,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     filterChain.doFilter(request, response);
-  }
-
-  private String extractToken(HttpServletRequest request) {
-    // 1. Authorization 헤더에서 토큰 추출 시도
-    String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-    if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-      return bearerToken.substring(BEARER_PREFIX.length());
-    }
-    
-    // 2. 쿠키에서 Access Token 추출 시도
-    return cookieUtil.getAccessTokenFromCookie(request).orElse(null);
   }
 }
 
