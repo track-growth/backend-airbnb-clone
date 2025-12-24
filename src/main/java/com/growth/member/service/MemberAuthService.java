@@ -73,5 +73,19 @@ public class MemberAuthService {
       throw new BadRequestException("비밀번호가 일치하지 않습니다.");
     }
   }
+
+  /**
+   * 회원 존재 여부를 검증합니다.
+   * 다른 도메인에서 Member의 존재 여부를 확인할 때 사용됩니다.
+   * (예: Room 생성 시 호스트 검증, Reservation 생성 시 게스트 검증)
+   *
+   * @param memberId 검증할 회원 ID
+   * @throws BadRequestException 회원이 존재하지 않는 경우
+   */
+  public void validateMemberExists(java.util.UUID memberId) {
+    if (!memberRepository.existsById(memberId)) {
+      throw new BadRequestException("존재하지 않는 회원입니다.");
+    }
+  }
 }
 
