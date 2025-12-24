@@ -38,3 +38,4 @@ spring:
 jwt:
   secret: ${JWT_SECRET:PHNHLG1nm+wTX2Ktwi/0OsFwiBKS6vIek+uOtnAe1/k=}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000} # 1시간 (밀리초)
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000} # 7일 (밀리초)
