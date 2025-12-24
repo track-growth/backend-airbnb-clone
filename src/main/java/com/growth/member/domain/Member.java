@@ -15,7 +15,7 @@ import java.time.Clock;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "member")
-public class Member extends BaseEntity {
+public class Member extends BaseEntity implements MemberUpdate {
   @Id
   @Column(name = "member_id", nullable = false)
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -56,6 +56,14 @@ public class Member extends BaseEntity {
     this.password = password;
     this.nickname = nickname;
     this.lastLoginAt = lastLoginAt;
+  }
+
+  @Override
+  public void onLoginSuccess(Clock clock) {
+    // NOTE: 로그인 성공 시 Member 도메인이 스스로 필요한 정보를 업데이트
+    // NOTE: 다른 도메인은 "로그인 성공"이라는 사실만 알리고, 구체적인 업데이트는 Member가 결정
+    updateLastLoginAt(clock);
+    // NOTE: 향후 필요한 경우 여기에 추가 로직 구현 (예: loginCount++, failedLoginAttempts = 0 등)
   }
 
   public void updateLastLoginAt(Clock clock) {
