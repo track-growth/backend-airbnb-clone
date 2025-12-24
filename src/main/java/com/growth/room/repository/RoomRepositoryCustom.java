@@ -9,7 +9,7 @@ import org.springframework.data.domain.Pageable;
 // TODO: 검색 조건 추가 시 사용
 // import com.growth.room.dto.request.RoomSearchCondition;
 
-public interface RoomRepositoryCoustom {
+public interface RoomRepositoryCustom {
   /**
    * 검색 조건에 따른 방 목록을 조회합니다.
    * 
