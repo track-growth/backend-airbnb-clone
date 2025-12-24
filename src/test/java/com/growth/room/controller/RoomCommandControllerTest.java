@@ -2,6 +2,7 @@ package com.growth.room.controller;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.growth.auth.jwt.domain.TokenType;
@@ -13,16 +14,10 @@ import com.growth.room.dto.request.CreateRoomRequestDto;
 import com.growth.support.IntegrationTestBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,7 +25,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 @DisplayName("RoomCommandController 통합 테스트")
-@Import(RoomCommandControllerTest.TestClockConfig.class)
 class RoomCommandControllerTest extends IntegrationTestBase {
 
   @Autowired
@@ -50,20 +44,6 @@ class RoomCommandControllerTest extends IntegrationTestBase {
 
   private Member testMember;
   private String accessToken;
-
-  /**
-   * 테스트용 Clock 설정
-   */
-  @TestConfiguration
-  static class TestClockConfig {
-    @Bean
-    public Clock clock() {
-      // NOTE: 테스트용 고정 시각 설정 (2025-11-26 12:00:00 UTC)
-      Instant fixedInstant = Instant.parse("2025-11-26T12:00:00Z");
-      ZoneId zoneId = ZoneId.of("UTC");
-      return Clock.fixed(fixedInstant, zoneId);
-    }
-  }
 
   @BeforeEach
   void setUp() {
@@ -106,7 +86,7 @@ class RoomCommandControllerTest extends IntegrationTestBase {
     // when & then
     mockMvc
       .perform(
-        post("/api/rooms/create")
+        post("/api/rooms")
           .header("Authorization", "Bearer " + accessToken)
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(request))
@@ -139,10 +119,11 @@ class RoomCommandControllerTest extends IntegrationTestBase {
     // when & then
     mockMvc
       .perform(
-        post("/api/rooms/create")
+        post("/api/rooms")
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(request))
       )
+      .andDo(print())
       .andExpect(status().isUnauthorized());
   }
 
@@ -161,7 +142,7 @@ class RoomCommandControllerTest extends IntegrationTestBase {
     // when & then
     mockMvc
       .perform(
-        post("/api/rooms/create")
+        post("/api/rooms")
           .header("Authorization", "Bearer invalidToken")
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(request))
@@ -184,7 +165,7 @@ class RoomCommandControllerTest extends IntegrationTestBase {
     // when & then
     mockMvc
       .perform(
-        post("/api/rooms/create")
+        post("/api/rooms")
           .header("Authorization", "Bearer " + accessToken)
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(request))
@@ -207,7 +188,7 @@ class RoomCommandControllerTest extends IntegrationTestBase {
     // when & then
     mockMvc
       .perform(
-        post("/api/rooms/create")
+        post("/api/rooms")
           .header("Authorization", "Bearer " + accessToken)
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(request))
@@ -230,7 +211,7 @@ class RoomCommandControllerTest extends IntegrationTestBase {
     // when & then
     mockMvc
       .perform(
-        post("/api/rooms/create")
+        post("/api/rooms")
           .header("Authorization", "Bearer " + accessToken)
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(request))
@@ -253,7 +234,7 @@ class RoomCommandControllerTest extends IntegrationTestBase {
     // when & then
     mockMvc
       .perform(
-        post("/api/rooms/create")
+        post("/api/rooms")
           .header("Authorization", "Bearer " + accessToken)
           .contentType(MediaType.APPLICATION_JSON)
           .content(objectMapper.writeValueAsString(request))

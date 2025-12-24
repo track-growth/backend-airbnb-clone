@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class RoomCommandController {
   private final CreateRoomUseCase createRoomUseCase;
 
-  @PostMapping("/api/rooms/create")
+  @PostMapping("/api/rooms")
   @ResponseStatus(HttpStatus.CREATED)
   public ApiResponse<CreateRoomResponseDto> createRoom(
     @Valid @RequestBody CreateRoomRequestDto requestDto,
