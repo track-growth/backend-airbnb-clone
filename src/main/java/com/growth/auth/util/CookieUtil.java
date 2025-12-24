@@ -18,6 +18,15 @@ public class CookieUtil {
   @Value("${jwt.access-token-expiration:86400000}")
   private long accessTokenExpiration;
 
+  @Value("${cookie.http-only:true}")
+  private boolean httpOnly;
+
+  @Value("${cookie.secure:false}")
+  private boolean secure;
+
+  @Value("${cookie.same-site:Lax}")
+  private String sameSite;
+
   private static final String ACCESS_TOKEN_COOKIE_NAME = "accessToken";
   private static final String REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
   private static final int REFRESH_TOKEN_EXPIRATION_DAYS = 7;
@@ -110,12 +119,12 @@ public class CookieUtil {
     cookie.setMaxAge(maxAge);
     cookie.setPath("/");
     // HttpOnly: JavaScript에서 접근 불가 (XSS 공격 방지)
-    cookie.setHttpOnly(true);
+    cookie.setHttpOnly(httpOnly);
     // Secure: HTTPS에서만 전송 (프로덕션 환경에서 true로 설정 권장)
     // 개발 환경에서는 false로 설정 (localhost는 HTTP 사용)
-    cookie.setSecure(false);
+    cookie.setSecure(secure);
     // SameSite: CSRF 공격 방지
-    cookie.setAttribute("SameSite", "Lax");
+    cookie.setAttribute("SameSite", sameSite);
     
     return cookie;
   }

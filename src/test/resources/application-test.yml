@@ -50,3 +50,9 @@ jwt:
   secret: PHNHLG1nm+wTX2Ktwi/0OsFwiBKS6vIek+uOtnAe1/k=
   access-token-expiration: 3600000 # 1시간 (밀리초)
   refresh-token-expiration: 604800000 # 7일 (밀리초)
+
+# Cookie 보안 설정 (테스트용)
+cookie:
+  http-only: false # 테스트 시 쿠키 접근 허용
+  secure: false # 테스트 환경은 HTTP 사용
+  same-site: Lax
