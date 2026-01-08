@@ -54,6 +54,12 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
+    // ===== JWT =====
+    implementation 'io.jsonwebtoken:jjwt:0.12.5'
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+
     // ===== Lombok =====
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -69,6 +75,11 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// ===== Spring Boot Main Class 설정 =====
+springBoot {
+    mainClass = 'com.growth.GrowthApplication'
 }
 
 // ===== QueryDSL 설정 =====
@@ -88,7 +99,7 @@ sourceSets {
 clean {
     delete file(generated)
 }
-
 test {
     jvmArgs += ["-javaagent:${classpath.find { it.name.contains('mockito-core') }.absolutePath}"]
 }
+
