@@ -15,19 +15,14 @@ import com.growth.auth.jwt.domain.UserIdentity;
 import com.growth.auth.jwt.service.JwtService;
 import com.growth.global.exception.BadRequestException;
 import com.growth.member.domain.Member;
-import com.growth.member.repository.MemberRepository;
+import com.growth.member.service.MemberAuthService;
 import com.growth.support.UnitTestBase;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 // 📌 Question: 회원가입 Service 단위 테스트는 추가적으로 작성할 필요가 없는건지??
 // NOTE: Java 단위테스트 특징: DB나 외부 의존성 없이 메모리에서만 실행 + 테스트 대상에만 집중 + Mock 객체 사용
@@ -35,27 +30,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("LoginService 단위 테스트")
 class AuthServiceTest extends UnitTestBase {
-  // 1. MemberRepository, passwordEncoder, jwtService Mock 객체 생성
-  // 2. AuthService 객체 생성
-  // 3. 각 객체 테스트
+  // NOTE: AuthService는 MemberAuthService와 JwtService만 의존
+  // NOTE: Member 관련 책임(조회, 인증, 업데이트)은 MemberAuthService가 담당
 
-  // NOTE: Mock 객체 생성을 위한 Mock 어노테이션
+  // NOTE: MemberAuthService Mock 객체 생성
+  // Member 도메인의 인증 책임을 가진 서비스
   @Mock
-  private MemberRepository memberRepository;
-
-  @Mock
-  private PasswordEncoder passwordEncoder;
+  private MemberAuthService memberAuthService;
 
   // NOTE: JWT Token 생성을 위한 JwtService를 주입받음
   // 테스트에서 jwtService.generateToken() 호출하여 JWT Token 생성 테스트 가능
   @Mock
   private JwtService jwtService;
 
-  @Mock
-  private Clock clock;
-
   // NOTE: Mock 객체 주입을 위한 InjectMocks 어노테이션
-  // - 모든 Mock 객체(memberRepository, passwordEncoder, jwtService)를 주입받아 AuthService 객체 생성
+  // - 모든 Mock 객체(memberAuthService, jwtService)를 주입받아 AuthService 객체 생성
   @InjectMocks
   private AuthService authService;
 
@@ -65,10 +54,9 @@ class AuthServiceTest extends UnitTestBase {
     // 1. LoginRequestDto 생성
     // 2. Member 엔티티 생성
     // 3. given() 메서드 사용하여 Mock 객체 동작 정의
-    //  3-1. memberRepository.findByEmail(email) 호출하여 Member 엔티티 조회
-    //  3-2. passwordEncoder.matches(password, encodedPassword) 호출하여 비밀번호 검증
-    //  3-3. jwtService.generateToken(UserIdentity, TokenType.ACCESS) 호출하여 Access Token 생성
-    //  3-4. jwtService.generateToken(UserIdentity, TokenType.REFRESH) 호출하여 Refresh Token 생성
+    //  3-1. memberAuthService.authenticateAndUpdate(email, password) 호출하여 인증된 Member 반환
+    //  3-2. jwtService.generateToken(UserIdentity, TokenType.ACCESS) 호출하여 Access Token 생성
+    //  3-3. jwtService.generateToken(UserIdentity, TokenType.REFRESH) 호출하여 Refresh Token 생성
     // 4. authService.login() 호출하여 로그인 기능 테스트 (로그인 성공 시 응답 DTO 반환)
     // 5. assertThat()로 응답 DTO 검증
 
@@ -90,16 +78,10 @@ class AuthServiceTest extends UnitTestBase {
     String refreshToken = "refreshToken";
     EncodedToken encodedAccessToken = EncodedToken.from(accessToken);
     EncodedToken encodedRefreshToken = EncodedToken.from(refreshToken);
-    Instant fixedInstant = Instant.parse("2025-11-26T12:00:00Z");
-    ZoneId zoneId = ZoneId.of("UTC");
 
     // NOTE: given(): Mock 객체의 동작을 정의하는 메서드
-    // - Member 엔티티 조회
-    given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
-    // - 비밀번호 검증
-    given(passwordEncoder.matches(password, encodedPassword)).willReturn(true);
-    given(clock.instant()).willReturn(fixedInstant);
-    given(clock.getZone()).willReturn(zoneId);
+    // NOTE: MemberAuthService가 Member 도메인의 인증 책임을 모두 처리
+    given(memberAuthService.authenticateAndUpdate(email, password)).willReturn(member);
     given(jwtService.generateToken(any(UserIdentity.class), eq(TokenType.ACCESS))).willReturn(encodedAccessToken);
     given(jwtService.generateToken(any(UserIdentity.class), eq(TokenType.REFRESH))).willReturn(encodedRefreshToken);
 
@@ -116,10 +98,8 @@ class AuthServiceTest extends UnitTestBase {
     assertThat(loginResult.refreshToken()).isEqualTo(refreshToken);
 
     // NOTE: then(): Mock 객체의 동작을 검증하는 메서드
-    // - memberRepository.findByEmail(email) 호출하여 Member 엔티티 조회
-    then(memberRepository).should().findByEmail(email);
-    // - passwordEncoder.matches(password, encodedPassword) 호출하여 비밀번호 검증
-    then(passwordEncoder).should().matches(password, encodedPassword);
+    // NOTE: AuthService는 MemberAuthService에게만 의존
+    then(memberAuthService).should().authenticateAndUpdate(email, password);
     then(jwtService).should().generateToken(any(UserIdentity.class), eq(TokenType.ACCESS));
     then(jwtService).should().generateToken(any(UserIdentity.class), eq(TokenType.REFRESH));
   }
@@ -133,15 +113,18 @@ class AuthServiceTest extends UnitTestBase {
 
     LoginRequestDto requestDto = new LoginRequestDto(email, password);
 
-    given(memberRepository.findByEmail(email)).willReturn(Optional.empty());
+    // NOTE: MemberAuthService가 예외를 발생시킴 (Member 도메인의 책임)
+    given(memberAuthService.authenticateAndUpdate(email, password))
+      .willThrow(new BadRequestException("회원 정보가 없습니다."));
 
     // when & then
     assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("회원 정보가 없습니다.");
 
-    then(memberRepository).should().findByEmail(email);
-    then(passwordEncoder).shouldHaveNoInteractions();
+    // NOTE: AuthService는 MemberAuthService에게만 의존
+    then(memberAuthService).should().authenticateAndUpdate(email, password);
+    then(jwtService).shouldHaveNoInteractions();
   }
 
   @Test
@@ -150,27 +133,21 @@ class AuthServiceTest extends UnitTestBase {
     // given
     String email = "test@example.com";
     String password = "wrongPassword";
-    String encodedPassword = "encodedPassword123";
 
     LoginRequestDto requestDto = new LoginRequestDto(email, password);
 
-    Member member = Member
-      .builder()
-      .email(email)
-      .password(encodedPassword)
-      .nickname("testuser")
-      .build();
-
-    given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
-    given(passwordEncoder.matches(password, encodedPassword)).willReturn(false);
+    // NOTE: MemberAuthService가 비밀번호 검증 후 예외를 발생시킴 (Member 도메인의 책임)
+    given(memberAuthService.authenticateAndUpdate(email, password))
+      .willThrow(new BadRequestException("비밀번호가 일치하지 않습니다."));
 
     // when & then
     assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("비밀번호가 일치하지 않습니다.");
 
-    then(memberRepository).should().findByEmail(email);
-    then(passwordEncoder).should().matches(password, encodedPassword);
+    // NOTE: AuthService는 MemberAuthService에게만 의존
+    then(memberAuthService).should().authenticateAndUpdate(email, password);
+    then(jwtService).shouldHaveNoInteractions();
   }
 
   @Test
@@ -179,15 +156,18 @@ class AuthServiceTest extends UnitTestBase {
     // given
     LoginRequestDto requestDto = new LoginRequestDto(null, "password123");
 
-    given(memberRepository.findByEmail(null)).willReturn(Optional.empty());
+    // NOTE: MemberAuthService가 null 이메일에 대한 예외를 발생시킴
+    given(memberAuthService.authenticateAndUpdate(null, "password123"))
+      .willThrow(new BadRequestException("회원 정보가 없습니다."));
 
     // when & then
     assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("회원 정보가 없습니다.");
 
-    then(memberRepository).should().findByEmail(null);
-    then(passwordEncoder).shouldHaveNoInteractions();
+    // NOTE: AuthService는 MemberAuthService에게만 의존
+    then(memberAuthService).should().authenticateAndUpdate(null, "password123");
+    then(jwtService).shouldHaveNoInteractions();
   }
 
   @Test
@@ -196,15 +176,18 @@ class AuthServiceTest extends UnitTestBase {
     // given
     LoginRequestDto requestDto = new LoginRequestDto("", "password123");
 
-    given(memberRepository.findByEmail("")).willReturn(Optional.empty());
+    // NOTE: MemberAuthService가 빈 이메일에 대한 예외를 발생시킴
+    given(memberAuthService.authenticateAndUpdate("", "password123"))
+      .willThrow(new BadRequestException("회원 정보가 없습니다."));
 
     // when & then
     assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("회원 정보가 없습니다.");
 
-    then(memberRepository).should().findByEmail("");
-    then(passwordEncoder).shouldHaveNoInteractions();
+    // NOTE: AuthService는 MemberAuthService에게만 의존
+    then(memberAuthService).should().authenticateAndUpdate("", "password123");
+    then(jwtService).shouldHaveNoInteractions();
   }
 
   @Test
@@ -212,26 +195,20 @@ class AuthServiceTest extends UnitTestBase {
   void login_NullPassword_ThrowsException() {
     // given
     String email = "test@example.com";
-    String encodedPassword = "encodedPassword123";
 
     LoginRequestDto requestDto = new LoginRequestDto(email, null);
 
-    Member member = Member
-      .builder()
-      .email(email)
-      .password(encodedPassword)
-      .nickname("testuser")
-      .build();
-
-    given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
-    given(passwordEncoder.matches(null, encodedPassword)).willReturn(false);
+    // NOTE: MemberAuthService가 null 비밀번호에 대한 예외를 발생시킴
+    given(memberAuthService.authenticateAndUpdate(email, null))
+      .willThrow(new BadRequestException("비밀번호가 일치하지 않습니다."));
 
     // when & then
     assertThatThrownBy(() -> authService.login(requestDto))
       .isInstanceOf(BadRequestException.class)
       .hasMessage("비밀번호가 일치하지 않습니다.");
 
-    then(memberRepository).should().findByEmail(email);
-    then(passwordEncoder).should().matches(null, encodedPassword);
+    // NOTE: AuthService는 MemberAuthService에게만 의존
+    then(memberAuthService).should().authenticateAndUpdate(email, null);
+    then(jwtService).shouldHaveNoInteractions();
   }
 }

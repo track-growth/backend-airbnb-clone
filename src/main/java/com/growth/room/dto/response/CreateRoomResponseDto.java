@@ -17,7 +17,7 @@ public record CreateRoomResponseDto(
   LocalDateTime createdAt
 ) {
   public static CreateRoomResponseDto from(Room room) {
-    return from(room, room.getHost().getMemberId());
+    return from(room, room.getHostId());
   }
 
   public static CreateRoomResponseDto from(Room room, UUID hostId) {

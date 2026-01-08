@@ -1,6 +1,7 @@
 package com.growth.global.config;
 
 import com.growth.auth.jwt.filter.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +39,15 @@ public class SecurityConfig {
       )
       // JWT 필터 추가
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+      // 인증 예외 처리: 인증되지 않은 요청에 대해 401 Unauthorized 반환
+      .exceptionHandling(
+        exception ->
+          exception.authenticationEntryPoint(
+            (request, response, authException) -> {
+              response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+            }
+          )
+      )
       // 요청 권한 설정
       .authorizeHttpRequests(
         auth ->

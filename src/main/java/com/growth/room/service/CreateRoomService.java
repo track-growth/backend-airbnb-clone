@@ -1,8 +1,6 @@
 package com.growth.room.service;
 
-import com.growth.global.exception.BadRequestException;
-import com.growth.member.domain.Member;
-import com.growth.member.repository.MemberRepository;
+import com.growth.member.service.MemberAuthService;
 import com.growth.room.domain.Room;
 import com.growth.room.dto.request.CreateRoomRequestDto;
 import com.growth.room.dto.response.CreateRoomResponseDto;
@@ -19,21 +17,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateRoomService implements CreateRoomUseCase {
 
   private final RoomRepository roomRepository;
-  private final MemberRepository memberRepository;
+  private final MemberAuthService memberAuthService;
 
   @Override
-  public CreateRoomResponseDto createRoom(CreateRoomRequestDto requestDto, UUID memberId) {
-    // NOTE: 회원 엔티티 조회
-    Member member = memberRepository
-      .findById(memberId)
-      .orElseThrow(() -> new BadRequestException("존재하지 않는 회원입니다."));
+  public CreateRoomResponseDto createRoom(CreateRoomRequestDto requestDto, UUID hostId) {
+    // NOTE: 존재하지 않는 회원 ID로 방을 만들면 안되므로 회원 존재 여부 확인 (데이터 무결성 보장)
+    // - Member 도메인 서비스에 검증 책임을 위임 (도메인 경계 명확화)
+    // - MSA 구조에서는 이 부분을 member service API 호출로 대체 가능
+    memberAuthService.validateMemberExists(hostId);
 
-    // NOTE: Room 엔티티 생성 및 저장
-    Room room = Room.from(requestDto, member);
+    // NOTE: Room 엔티티 생성 및 저장 (hostId만 사용)
+    Room room = Room.from(requestDto, hostId);
     Room savedRoom = roomRepository.save(room);
 
-    // NOTE: 응답 DTO 변환 후 반환 (이미 로드된 memberId를 사용하여 LAZY 로딩 문제 방지)
-    return CreateRoomResponseDto.from(savedRoom, memberId);
+    // NOTE: 응답 DTO 변환 후 반환
+    return CreateRoomResponseDto.from(savedRoom, hostId);
   }
 }
 

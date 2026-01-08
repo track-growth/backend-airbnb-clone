@@ -1,10 +1,11 @@
 package com.growth.global.config;
 
-// import com.growth.auth.annotation.RoleIdArgumentResolver;
-// import com.growth.auth.annotation.UserIdArgumentResolver;
+import com.growth.auth.resolver.CurrentMemberIdArgumentResolver;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,9 +13,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
-  // TODO: ArgumentResolver 구현
-  // private final UserIdArgumentResolver userIdArgumentResolver;
-  // private final RoleIdArgumentResolver roleIdArgumentResolver;
+  private final CurrentMemberIdArgumentResolver currentMemberIdArgumentResolver;
 
   @Override
   public void addCorsMappings(@NonNull CorsRegistry registry) {
@@ -33,10 +32,9 @@ public class WebConfig implements WebMvcConfigurer {
       .allowCredentials(true)
       .maxAge(3600);
   }
-  // TODO: ArgumentResolver 구현
-  // @Override
-  // public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-  //     resolvers.add(userIdArgumentResolver);
-  //     resolvers.add(roleIdArgumentResolver);
-  // }
+
+  @Override
+  public void addArgumentResolvers(@NonNull List<HandlerMethodArgumentResolver> resolvers) {
+    resolvers.add(currentMemberIdArgumentResolver);
+  }
 }

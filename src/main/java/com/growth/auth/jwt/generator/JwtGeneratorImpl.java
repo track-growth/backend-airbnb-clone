@@ -26,13 +26,16 @@ public class JwtGeneratorImpl implements JwtGenerator {
   @Value("${jwt.access-token-expiration}")
   private long accessTokenExpiration;
 
+  @Value("${jwt.refresh-token-expiration}")
+  private long refreshTokenExpiration;
+
   @Override
   public EncodedToken generateToken(UserIdentity userIdentity, TokenType tokenType) {
     SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     
     long expiration = tokenType == TokenType.ACCESS 
         ? accessTokenExpiration 
-        : accessTokenExpiration * 7; // Refresh token은 7일 (임시)
+        : refreshTokenExpiration;
 
     Date now = new Date();
     Date expiryDate = new Date(now.getTime() + expiration);

@@ -9,20 +9,16 @@ import com.growth.global.exception.BadRequestException;
 import com.growth.member.domain.Member;
 import com.growth.member.repository.MemberRepository;
 import com.growth.support.IntegrationTestBase;
-import java.time.Instant;
+import com.growth.support.fixture.MemberFixture;
+
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Clock;
 
 @DisplayName("AuthService 통합 테스트")
-@Import(AuthServiceIntegrationTest.TestClockConfig.class)
 class AuthServiceIntegrationTest extends IntegrationTestBase {
   // NOTE: @Autowired: Spring Framework에서 의존성 주입을 자동으로 처리하는 어노테이션
   // - 직접 만드는 방식보다 테스트 코드 작성이 편리함 + 객체 간 결합도 낮아짐 + 테스트용 DB 사용
@@ -42,25 +38,8 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
   private PasswordEncoder passwordEncoder;
 
   @Autowired
-  // NOTE: 테스트 시 고정 시각 사용
+  // NOTE: 테스트 시 고정 시각 사용 
   private Clock clock;
-
-  /**
-   * 테스트용 Clock 설정
-   * - 테스트 시 고정 시각을 사용하여 시간 관련 테스트를 안정적으로 수행
-   * - 운영 환경에서는 TimeConfig의 Clock.systemDefaultZone()이 사용됨
-   * - @Profile("!test")로 인해 TimeConfig의 Clock은 테스트 환경에서 등록되지 않음
-   */
-  @TestConfiguration
-  static class TestClockConfig {
-    @Bean
-    public Clock clock() {
-      // NOTE: 테스트용 고정 시각 설정 (2025-11-26 12:00:00 UTC)
-      Instant fixedInstant = Instant.parse("2025-11-26T12:00:00Z");
-      ZoneId zoneId = ZoneId.of("UTC");
-      return Clock.fixed(fixedInstant, zoneId);
-    }
-  }
 
   @Test
   @DisplayName("올바른 이메일과 비밀번호로 로그인할 수 있다")
@@ -74,16 +53,9 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     // given
     String email = "test@example.com";
     String password = "password123";
-    // NOTE: passwordEncoder로 비밀번호 암호화
-    String encodedPassword = passwordEncoder.encode(password);
 
     // NOTE: 테스트용 회원 생성 및 저장
-    Member member = Member
-      .builder()
-      .email(email)
-      .password(encodedPassword)
-      .nickname("testuser")
-      .build();
+    Member member = MemberFixture.createMember(email, password, "testuser", passwordEncoder);
     // NOTE: 테스트용 DB에 회원 데이터 저장
     memberRepository.save(member);
 
@@ -150,15 +122,9 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     String email = "test@example.com";
     String correctPassword = "123";
     String wrongPassword = "wrongPassword";
-    String encodedPassword = passwordEncoder.encode(correctPassword);
 
     // 회원 생성 및 저장
-    Member member = Member
-      .builder()
-      .email(email)
-      .password(encodedPassword)
-      .nickname("testuser")
-      .build();
+    Member member = MemberFixture.createMember(email, correctPassword, "testuser", passwordEncoder);
     memberRepository.save(member);
 
     LoginRequestDto requestDto = new LoginRequestDto(email, wrongPassword);
@@ -184,19 +150,8 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     String password1 = "password1";
     String password2 = "password2";
 
-    Member member1 = Member
-      .builder()
-      .email(email1)
-      .password(passwordEncoder.encode(password1))
-      .nickname("user1")
-      .build();
-
-    Member member2 = Member
-      .builder()
-      .email(email2)
-      .password(passwordEncoder.encode(password2))
-      .nickname("user2")
-      .build();
+    Member member1 = MemberFixture.createMember(email1, password1, "user1", passwordEncoder);
+    Member member2 = MemberFixture.createMember(email2, password2, "user2", passwordEncoder);
 
     memberRepository.save(member1);
     memberRepository.save(member2);
@@ -226,15 +181,9 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     String email = "test@example.com";
     String differentCaseEmail = "TEST@EXAMPLE.COM";
     String password = "password123";
-    String encodedPassword = passwordEncoder.encode(password);
 
     // 회원 생성 및 저장
-    Member member = Member
-      .builder()
-      .email(email)
-      .password(encodedPassword)
-      .nickname("testuser")
-      .build();
+    Member member = MemberFixture.createMember(email, password, "testuser", passwordEncoder);
     memberRepository.save(member);
 
     LoginRequestDto requestDto = new LoginRequestDto(
@@ -261,15 +210,9 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     String email = "test@example.com";
     String emailWithWhitespace = " test@example.com ";
     String password = "password123";
-    String encodedPassword = passwordEncoder.encode(password);
 
     // 회원 생성 및 저장
-    Member member = Member
-      .builder()
-      .email(email)
-      .password(encodedPassword)
-      .nickname("testuser")
-      .build();
+    Member member = MemberFixture.createMember(email, password, "testuser", passwordEncoder);
     memberRepository.save(member);
 
     LoginRequestDto requestDto = new LoginRequestDto(
@@ -296,15 +239,9 @@ class AuthServiceIntegrationTest extends IntegrationTestBase {
     String email = "test@example.com";
     String password = "password123";
     String passwordWithWhitespace = " password123 ";
-    String encodedPassword = passwordEncoder.encode(password);
 
     // 회원 생성 및 저장
-    Member member = Member
-      .builder()
-      .email(email)
-      .password(encodedPassword)
-      .nickname("testuser")
-      .build();
+    Member member = MemberFixture.createMember(email, password, "testuser", passwordEncoder);
     memberRepository.save(member);
 
     LoginRequestDto requestDto = new LoginRequestDto(
