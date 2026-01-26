@@ -1,8 +1,12 @@
 package com.growth.auth.resolver;
 
 import com.growth.auth.annotation.CurrentMemberId;
+import com.growth.auth.exception.AuthErrorMessage;
+import com.growth.global.exception.UnauthorizedException;
 import java.util.UUID;
 import org.springframework.core.MethodParameter;
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -28,7 +32,7 @@ public class CurrentMemberIdArgumentResolver implements HandlerMethodArgumentRes
    * @return @CurrentMemberId 어노테이션이 있고 타입이 UUID인 경우 true
    */
   @Override
-  public boolean supportsParameter(MethodParameter parameter) {
+  public boolean supportsParameter(@NonNull MethodParameter parameter) {
     return parameter.hasParameterAnnotation(CurrentMemberId.class)
         && UUID.class.equals(parameter.getParameterType());
   }
@@ -41,27 +45,30 @@ public class CurrentMemberIdArgumentResolver implements HandlerMethodArgumentRes
    * @param webRequest 웹 요청
    * @param binderFactory 데이터 바인더 팩토리
    * @return SecurityContext에서 추출한 UUID (memberId)
-   * @throws IllegalStateException 인증 정보가 없거나 Principal이 UUID가 아닌 경우
+   * @throws IllegalStateException Principal이 UUID가 아닌 경우
+   * @throws UnauthorizedException 인증 정보가 없거나 인증되지 않은 경우
    */
   @Override
   public Object resolveArgument(
-      MethodParameter parameter,
-      ModelAndViewContainer mavContainer,
-      NativeWebRequest webRequest,
-      WebDataBinderFactory binderFactory
+      @NonNull MethodParameter parameter,
+      @Nullable ModelAndViewContainer mavContainer,
+      @NonNull NativeWebRequest webRequest,
+      @Nullable WebDataBinderFactory binderFactory
   ) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
     if (authentication == null || !authentication.isAuthenticated()) {
-      throw new IllegalStateException("인증되지 않은 사용자입니다.");
+      throw new UnauthorizedException(AuthErrorMessage.UNAUTHORIZED);
     }
 
     Object principal = authentication.getPrincipal();
 
+    if (principal == null) {
+      throw new NullPointerException("Principal is null");
+    }
+    
     if (!(principal instanceof UUID)) {
-      throw new IllegalStateException(
-          "Principal이 UUID 타입이 아닙니다. 실제 타입: " + principal.getClass().getName()
-      );
+      throw new IllegalStateException("Principal이 UUID 타입이 아닙니다. 실제 타입: " + principal.getClass().getName());
     }
 
     return principal;

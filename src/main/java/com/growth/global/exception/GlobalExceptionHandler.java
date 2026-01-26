@@ -16,12 +16,24 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String BAD_REQUEST_TITLE = "잘못된 요청입니다";
+
+    @ExceptionHandler(UnauthorizedException.class)
+    ProblemDetail handleUnauthorizedException(final UnauthorizedException e) {
+        log.warn("UnauthorizedException: {}", e.getMessage());
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, e.getMessage());
+        problemDetail.setTitle("인증이 필요합니다");
+
+        return problemDetail;
+    }
+
     @ExceptionHandler(BadRequestException.class)
     ProblemDetail handleBadRequestException(final BadRequestException e) {
         log.error("BadRequestException: {}", e.getMessage());
 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
-        problemDetail.setTitle("잘못된 요청입니다");
+        problemDetail.setTitle(BAD_REQUEST_TITLE);
 
         return problemDetail;
     }
@@ -31,14 +43,14 @@ public class GlobalExceptionHandler {
         log.error("MethodArgumentNotValidException: {}", e.getMessage());
 
         Map<String, String> errors = new HashMap<>();
-        e.getBindingResult().getAllErrors().forEach((error) -> {
+        e.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "입력값 검증에 실패했습니다");
-        problemDetail.setTitle("잘못된 요청입니다");
+        problemDetail.setTitle(BAD_REQUEST_TITLE);
         problemDetail.setProperty("errors", errors);
 
         return problemDetail;
@@ -49,7 +61,7 @@ public class GlobalExceptionHandler {
         log.error("HttpMessageNotReadableException: {}", e.getMessage());
 
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "잘못된 JSON 형식입니다");
-        problemDetail.setTitle("잘못된 요청입니다");
+        problemDetail.setTitle(BAD_REQUEST_TITLE);
 
         return problemDetail;
     }
